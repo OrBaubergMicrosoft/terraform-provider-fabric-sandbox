@@ -36,6 +36,8 @@ func (to *baseOneLakeDataAccessSecurityModel) set(ctx context.Context, workspace
 	to.Kind = types.StringPointerValue((*string)(from.Kind))
 
 	// DecisionRules
+	to.DecisionRules.SetNull(ctx)
+
 	if from.DecisionRules != nil {
 		drSlice := make([]*decisionRuleModel, 0, len(from.DecisionRules))
 
@@ -55,6 +57,8 @@ func (to *baseOneLakeDataAccessSecurityModel) set(ctx context.Context, workspace
 	}
 
 	// Members
+	to.Members.SetNull(ctx)
+
 	if from.Members != nil {
 		membersModel := &membersModel{}
 
@@ -182,6 +186,8 @@ type decisionRuleModel struct {
 
 func (to *decisionRuleModel) set(ctx context.Context, from fabcore.DecisionRule) diag.Diagnostics {
 	to.Effect = types.StringPointerValue((*string)(from.Effect))
+	to.Permission.SetNull(ctx)
+	to.Constraints.SetNull(ctx)
 
 	// Permission
 	if from.Permission != nil {
@@ -265,13 +271,20 @@ type permissionScopeModel struct {
 
 func (to *permissionScopeModel) set(ctx context.Context, from fabcore.PermissionScope) diag.Diagnostics {
 	to.AttributeName = types.StringPointerValue((*string)(from.AttributeName))
+	to.AttributeValueIncludedIn.SetNull(ctx)
 
-	values := make([]types.String, 0, len(from.AttributeValueIncludedIn))
-	for _, v := range from.AttributeValueIncludedIn {
-		values = append(values, types.StringValue(v))
+	if from.AttributeValueIncludedIn != nil {
+		values := make([]types.String, 0, len(from.AttributeValueIncludedIn))
+		for _, v := range from.AttributeValueIncludedIn {
+			values = append(values, types.StringValue(v))
+		}
+
+		if diags := to.AttributeValueIncludedIn.Set(ctx, values); diags.HasError() {
+			return diags
+		}
 	}
 
-	return to.AttributeValueIncludedIn.Set(ctx, values)
+	return nil
 }
 
 func (from *permissionScopeModel) toSDK(ctx context.Context) (fabcore.PermissionScope, diag.Diagnostics) {
@@ -297,6 +310,9 @@ type constraintsModel struct {
 }
 
 func (to *constraintsModel) set(ctx context.Context, from fabcore.DecisionRuleConstraints) diag.Diagnostics {
+	to.Columns.SetNull(ctx)
+	to.Rows.SetNull(ctx)
+
 	if from.Columns != nil {
 		colSlice := make([]*columnConstraintModel, 0, len(from.Columns))
 
@@ -377,27 +393,32 @@ type columnConstraintModel struct {
 }
 
 func (to *columnConstraintModel) set(ctx context.Context, from fabcore.ColumnConstraint) diag.Diagnostics {
-	actions := make([]types.String, 0, len(from.ColumnAction))
-	for _, a := range from.ColumnAction {
-		actions = append(actions, types.StringValue(string(a)))
-	}
-
-	if diags := to.ColumnAction.Set(ctx, actions); diags.HasError() {
-		return diags
-	}
-
+	to.ColumnAction.SetNull(ctx)
+	to.ColumnNames.SetNull(ctx)
 	to.ColumnEffect = types.StringPointerValue((*string)(from.ColumnEffect))
-
-	names := make([]types.String, 0, len(from.ColumnNames))
-	for _, n := range from.ColumnNames {
-		names = append(names, types.StringValue(n))
-	}
-
-	if diags := to.ColumnNames.Set(ctx, names); diags.HasError() {
-		return diags
-	}
-
 	to.TablePath = types.StringPointerValue(from.TablePath)
+
+	if from.ColumnAction != nil {
+		actions := make([]types.String, 0, len(from.ColumnAction))
+		for _, a := range from.ColumnAction {
+			actions = append(actions, types.StringValue(string(a)))
+		}
+
+		if diags := to.ColumnAction.Set(ctx, actions); diags.HasError() {
+			return diags
+		}
+	}
+
+	if from.ColumnNames != nil {
+		names := make([]types.String, 0, len(from.ColumnNames))
+		for _, n := range from.ColumnNames {
+			names = append(names, types.StringValue(n))
+		}
+
+		if diags := to.ColumnNames.Set(ctx, names); diags.HasError() {
+			return diags
+		}
+	}
 
 	return nil
 }
@@ -452,6 +473,9 @@ type membersModel struct {
 }
 
 func (to *membersModel) set(ctx context.Context, from fabcore.Members) diag.Diagnostics {
+	to.FabricItemMembers.SetNull(ctx)
+	to.MicrosoftEntraMembers.SetNull(ctx)
+
 	if from.FabricItemMembers != nil {
 		fimSlice := make([]*fabricItemMemberModel, 0, len(from.FabricItemMembers))
 
@@ -530,16 +554,19 @@ type fabricItemMemberModel struct {
 }
 
 func (to *fabricItemMemberModel) set(ctx context.Context, from fabcore.FabricItemMember) diag.Diagnostics {
-	accesses := make([]types.String, 0, len(from.ItemAccess))
-	for _, a := range from.ItemAccess {
-		accesses = append(accesses, types.StringValue(string(a)))
-	}
-
-	if diags := to.ItemAccess.Set(ctx, accesses); diags.HasError() {
-		return diags
-	}
-
+	to.ItemAccess.SetNull(ctx)
 	to.SourcePath = types.StringPointerValue(from.SourcePath)
+
+	if from.ItemAccess != nil {
+		accesses := make([]types.String, 0, len(from.ItemAccess))
+		for _, a := range from.ItemAccess {
+			accesses = append(accesses, types.StringValue(string(a)))
+		}
+
+		if diags := to.ItemAccess.Set(ctx, accesses); diags.HasError() {
+			return diags
+		}
+	}
 
 	return nil
 }
