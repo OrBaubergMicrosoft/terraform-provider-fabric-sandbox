@@ -134,7 +134,7 @@ The generator automatically handles file naming based on the provided item name:
 After generating the files, you may need to:
 
 1. Review and update the generated files.
-1. Complete all `TBD` placeholders.
+1. Complete all `TODO` placeholders.
 1. Add the resource/data-source/s to the provider configuration.
 1. Update the well-known script.
 1. Run the tests to verify the implementation.
