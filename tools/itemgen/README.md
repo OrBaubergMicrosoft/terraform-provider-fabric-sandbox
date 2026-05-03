@@ -11,6 +11,7 @@ go run tools/itemgen/main.go \
   -item-name="<item-name>" \
   -items-name="<items-name>" \
   -item-type=<item-category> \
+  -definition-path=<definition-file-path> \
   -rename-allowed=<true|false> \
   -is-preview=<true|false> \
   -is-spn-supported=<true|false>
@@ -21,6 +22,7 @@ go run tools/itemgen/main.go \
 - `-item-name`: The display name of the item (e.g., "Data Pipeline")
 - `-items-name`: The display name of the item in plural form (e.g., "Data Pipelines")
 - `-item-type`: The category of item to generate (see Item Types section below)
+- `-definition-path`: The path of the definition file used in templates (default: content.json)
 - `-rename-allowed`: Whether the item can be renamed (default: true)
 - `-is-preview`: Whether the item is in preview (default: false)
 - `-is-spn-supported`: Whether the item supports SPN (default: false)
