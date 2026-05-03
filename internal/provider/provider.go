@@ -38,6 +38,7 @@ import (
 	pconfig "github.com/microsoft/terraform-provider-fabric/internal/provider/config"
 	putils "github.com/microsoft/terraform-provider-fabric/internal/provider/utils"
 	"github.com/microsoft/terraform-provider-fabric/internal/services/activator"
+	"github.com/microsoft/terraform-provider-fabric/internal/services/anomalydetector"
 	"github.com/microsoft/terraform-provider-fabric/internal/services/apacheairflowjob"
 	"github.com/microsoft/terraform-provider-fabric/internal/services/capacity"
 	"github.com/microsoft/terraform-provider-fabric/internal/services/connection"
@@ -483,6 +484,7 @@ func (p *FabricProvider) Resources(ctx context.Context) []func() resource.Resour
 		shortcut.NewResourceShortcut,
 		notebook.NewResourceNotebook,
 		activator.NewResourceActivator,
+		anomalydetector.NewResourceAnomalyDetector,
 		report.NewResourceReport,
 		semanticmodel.NewResourceSemanticModel,
 		sparkcustompool.NewResourceSparkCustomPool,
@@ -586,6 +588,8 @@ func (p *FabricProvider) DataSources(ctx context.Context) []func() datasource.Da
 		tags.NewDataSourceTag,
 		activator.NewDataSourceActivator,
 		activator.NewDataSourceActivators,
+		anomalydetector.NewDataSourceAnomalyDetector,
+		anomalydetector.NewDataSourceAnomalyDetectors,
 		report.NewDataSourceReport,
 		report.NewDataSourceReports,
 		semanticmodel.NewDataSourceSemanticModel,
