@@ -21,12 +21,12 @@ BASE MODEL
 */
 
 type baseOneLakeDataAccessSecurityModel struct {
-	WorkspaceID   customtypes.UUID                                               `tfsdk:"workspace_id"`
-	ItemID        customtypes.UUID                                               `tfsdk:"item_id"`
-	Name          types.String                                                   `tfsdk:"name"`
-	Kind          types.String                                                   `tfsdk:"kind"`
-	DecisionRules supertypes.ListNestedObjectValueOf[decisionRuleModel]          `tfsdk:"decision_rules"`
-	Members       supertypes.SingleNestedObjectValueOf[membersModel]             `tfsdk:"members"`
+	WorkspaceID   customtypes.UUID                                      `tfsdk:"workspace_id"`
+	ItemID        customtypes.UUID                                      `tfsdk:"item_id"`
+	Name          types.String                                          `tfsdk:"name"`
+	Kind          types.String                                          `tfsdk:"kind"`
+	DecisionRules supertypes.ListNestedObjectValueOf[decisionRuleModel] `tfsdk:"decision_rules"`
+	Members       supertypes.SingleNestedObjectValueOf[membersModel]    `tfsdk:"members"`
 }
 
 func (to *baseOneLakeDataAccessSecurityModel) set(ctx context.Context, workspaceID, itemID string, from fabcore.DataAccessRoleBase) diag.Diagnostics {
@@ -89,10 +89,10 @@ DATA-SOURCE (list)
 */
 
 type dataSourceOneLakeDataAccessSecuritiesModel struct {
-	WorkspaceID customtypes.UUID                                                        `tfsdk:"workspace_id"`
-	ItemID      customtypes.UUID                                                        `tfsdk:"item_id"`
-	Values      supertypes.SetNestedObjectValueOf[baseOneLakeDataAccessSecurityModel]    `tfsdk:"values"`
-	Timeouts    timeoutsD.Value                                                         `tfsdk:"timeouts"`
+	WorkspaceID customtypes.UUID                                                      `tfsdk:"workspace_id"`
+	ItemID      customtypes.UUID                                                      `tfsdk:"item_id"`
+	Values      supertypes.SetNestedObjectValueOf[baseOneLakeDataAccessSecurityModel] `tfsdk:"values"`
+	Timeouts    timeoutsD.Value                                                       `tfsdk:"timeouts"`
 }
 
 func (to *dataSourceOneLakeDataAccessSecuritiesModel) setValues(ctx context.Context, workspaceID, itemID string, from []fabcore.DataAccessRoleListItem) diag.Diagnostics {
@@ -148,9 +148,97 @@ func (to *requestCreateOrUpdateOneLakeDataAccessSecurity) set(ctx context.Contex
 	to.DecisionRules = make([]fabcore.DecisionRule, 0, len(decisionRules))
 
 	for _, drModel := range decisionRules {
-		dr, diags := drModel.toSDK(ctx)
-		if diags.HasError() {
-			return diags
+		dr := fabcore.DecisionRule{
+			Effect: (*fabcore.Effect)(drModel.Effect.ValueStringPointer()),
+		}
+
+		// Permission
+		permModels, d := drModel.Permission.Get(ctx)
+		if d.HasError() {
+			return d
+		}
+
+		dr.Permission = make([]fabcore.PermissionScope, 0, len(permModels))
+
+		for _, pm := range permModels {
+			ps := fabcore.PermissionScope{
+				AttributeName: (*fabcore.AttributeName)(pm.AttributeName.ValueStringPointer()),
+			}
+
+			elements, d := pm.AttributeValueIncludedIn.Get(ctx)
+			if d.HasError() {
+				return d
+			}
+
+			for _, e := range elements {
+				ps.AttributeValueIncludedIn = append(ps.AttributeValueIncludedIn, e.ValueString())
+			}
+
+			dr.Permission = append(dr.Permission, ps)
+		}
+
+		// Constraints
+		cPtr, d := drModel.Constraints.Get(ctx)
+		if d.HasError() {
+			return d
+		}
+
+		if cPtr != nil {
+			constraints := fabcore.DecisionRuleConstraints{}
+
+			colModels, d := cPtr.Columns.Get(ctx)
+			if d.HasError() {
+				return d
+			}
+
+			if colModels != nil {
+				constraints.Columns = make([]fabcore.ColumnConstraint, 0, len(colModels))
+
+				for _, cm := range colModels {
+					cc := fabcore.ColumnConstraint{
+						ColumnEffect: (*fabcore.ColumnEffect)(cm.ColumnEffect.ValueStringPointer()),
+						TablePath:    cm.TablePath.ValueStringPointer(),
+					}
+
+					actions, d := cm.ColumnAction.Get(ctx)
+					if d.HasError() {
+						return d
+					}
+
+					for _, a := range actions {
+						cc.ColumnAction = append(cc.ColumnAction, fabcore.ColumnAction(a.ValueString()))
+					}
+
+					names, d := cm.ColumnNames.Get(ctx)
+					if d.HasError() {
+						return d
+					}
+
+					for _, n := range names {
+						cc.ColumnNames = append(cc.ColumnNames, n.ValueString())
+					}
+
+					constraints.Columns = append(constraints.Columns, cc)
+				}
+			}
+
+			rowModels, d := cPtr.Rows.Get(ctx)
+			if d.HasError() {
+				return d
+			}
+
+			if rowModels != nil {
+				constraints.Rows = make([]fabcore.RowConstraint, 0, len(rowModels))
+
+				for _, rm := range rowModels {
+					constraints.Rows = append(constraints.Rows, fabcore.RowConstraint{
+						TablePath: rm.TablePath.ValueStringPointer(),
+						Value:     rm.Value.ValueStringPointer(),
+					})
+				}
+			}
+
+			dr.Constraints = &constraints
 		}
 
 		to.DecisionRules = append(to.DecisionRules, dr)
@@ -163,9 +251,49 @@ func (to *requestCreateOrUpdateOneLakeDataAccessSecurity) set(ctx context.Contex
 	}
 
 	if membersPtr != nil {
-		members, diags := membersPtr.toSDK(ctx)
-		if diags.HasError() {
-			return diags
+		members := fabcore.Members{}
+
+		fimModels, d := membersPtr.FabricItemMembers.Get(ctx)
+		if d.HasError() {
+			return d
+		}
+
+		if fimModels != nil {
+			members.FabricItemMembers = make([]fabcore.FabricItemMember, 0, len(fimModels))
+
+			for _, fimModel := range fimModels {
+				fim := fabcore.FabricItemMember{
+					SourcePath: fimModel.SourcePath.ValueStringPointer(),
+				}
+
+				accesses, d := fimModel.ItemAccess.Get(ctx)
+				if d.HasError() {
+					return d
+				}
+
+				for _, a := range accesses {
+					fim.ItemAccess = append(fim.ItemAccess, fabcore.ItemAccess(a.ValueString()))
+				}
+
+				members.FabricItemMembers = append(members.FabricItemMembers, fim)
+			}
+		}
+
+		memModels, d := membersPtr.MicrosoftEntraMembers.Get(ctx)
+		if d.HasError() {
+			return d
+		}
+
+		if memModels != nil {
+			members.MicrosoftEntraMembers = make([]fabcore.MicrosoftEntraMember, 0, len(memModels))
+
+			for _, memModel := range memModels {
+				members.MicrosoftEntraMembers = append(members.MicrosoftEntraMembers, fabcore.MicrosoftEntraMember{
+					ObjectID:   memModel.ObjectID.ValueStringPointer(),
+					TenantID:   memModel.TenantID.ValueStringPointer(),
+					ObjectType: (*fabcore.ObjectType)(memModel.ObjectType.ValueStringPointer()),
+				})
+			}
 		}
 
 		to.Members = &members
@@ -179,9 +307,9 @@ HELPER MODELS
 */
 
 type decisionRuleModel struct {
-	Effect      types.String                                                `tfsdk:"effect"`
-	Permission  supertypes.ListNestedObjectValueOf[permissionScopeModel]    `tfsdk:"permission"`
-	Constraints supertypes.SingleNestedObjectValueOf[constraintsModel]      `tfsdk:"constraints"`
+	Effect      types.String                                             `tfsdk:"effect"`
+	Permission  supertypes.ListNestedObjectValueOf[permissionScopeModel] `tfsdk:"permission"`
+	Constraints supertypes.SingleNestedObjectValueOf[constraintsModel]   `tfsdk:"constraints"`
 }
 
 func (to *decisionRuleModel) set(ctx context.Context, from fabcore.DecisionRule) diag.Diagnostics {
@@ -224,48 +352,8 @@ func (to *decisionRuleModel) set(ctx context.Context, from fabcore.DecisionRule)
 	return nil
 }
 
-func (from *decisionRuleModel) toSDK(ctx context.Context) (fabcore.DecisionRule, diag.Diagnostics) {
-	result := fabcore.DecisionRule{
-		Effect: (*fabcore.Effect)(from.Effect.ValueStringPointer()),
-	}
-
-	// Permission
-	permModels, diags := from.Permission.Get(ctx)
-	if diags.HasError() {
-		return result, diags
-	}
-
-	result.Permission = make([]fabcore.PermissionScope, 0, len(permModels))
-
-	for _, pm := range permModels {
-		ps, d := pm.toSDK(ctx)
-		if d.HasError() {
-			return result, d
-		}
-
-		result.Permission = append(result.Permission, ps)
-	}
-
-	// Constraints
-	cPtr, diags := from.Constraints.Get(ctx)
-	if diags.HasError() {
-		return result, diags
-	}
-
-	if cPtr != nil {
-		c, diags := cPtr.toSDK(ctx)
-		if diags.HasError() {
-			return result, diags
-		}
-
-		result.Constraints = &c
-	}
-
-	return result, nil
-}
-
 type permissionScopeModel struct {
-	AttributeName            types.String                       `tfsdk:"attribute_name"`
+	AttributeName            types.String                         `tfsdk:"attribute_name"`
 	AttributeValueIncludedIn supertypes.ListValueOf[types.String] `tfsdk:"attribute_value_included_in"`
 }
 
@@ -285,23 +373,6 @@ func (to *permissionScopeModel) set(ctx context.Context, from fabcore.Permission
 	}
 
 	return nil
-}
-
-func (from *permissionScopeModel) toSDK(ctx context.Context) (fabcore.PermissionScope, diag.Diagnostics) {
-	result := fabcore.PermissionScope{
-		AttributeName: (*fabcore.AttributeName)(from.AttributeName.ValueStringPointer()),
-	}
-
-	elements, diags := from.AttributeValueIncludedIn.Get(ctx)
-	if diags.HasError() {
-		return result, diags
-	}
-
-	for _, e := range elements {
-		result.AttributeValueIncludedIn = append(result.AttributeValueIncludedIn, e.ValueString())
-	}
-
-	return result, nil
 }
 
 type constraintsModel struct {
@@ -348,43 +419,6 @@ func (to *constraintsModel) set(ctx context.Context, from fabcore.DecisionRuleCo
 	return nil
 }
 
-func (from *constraintsModel) toSDK(ctx context.Context) (fabcore.DecisionRuleConstraints, diag.Diagnostics) {
-	result := fabcore.DecisionRuleConstraints{}
-
-	colModels, diags := from.Columns.Get(ctx)
-	if diags.HasError() {
-		return result, diags
-	}
-
-	if colModels != nil {
-		result.Columns = make([]fabcore.ColumnConstraint, 0, len(colModels))
-
-		for _, cm := range colModels {
-			cc, d := cm.toSDK(ctx)
-			if d.HasError() {
-				return result, d
-			}
-
-			result.Columns = append(result.Columns, cc)
-		}
-	}
-
-	rowModels, diags := from.Rows.Get(ctx)
-	if diags.HasError() {
-		return result, diags
-	}
-
-	if rowModels != nil {
-		result.Rows = make([]fabcore.RowConstraint, 0, len(rowModels))
-
-		for _, rm := range rowModels {
-			result.Rows = append(result.Rows, rm.toSDK())
-		}
-	}
-
-	return result, nil
-}
-
 type columnConstraintModel struct {
 	ColumnAction supertypes.ListValueOf[types.String] `tfsdk:"column_action"`
 	ColumnEffect types.String                         `tfsdk:"column_effect"`
@@ -423,33 +457,6 @@ func (to *columnConstraintModel) set(ctx context.Context, from fabcore.ColumnCon
 	return nil
 }
 
-func (from *columnConstraintModel) toSDK(ctx context.Context) (fabcore.ColumnConstraint, diag.Diagnostics) {
-	result := fabcore.ColumnConstraint{
-		ColumnEffect: (*fabcore.ColumnEffect)(from.ColumnEffect.ValueStringPointer()),
-		TablePath:    from.TablePath.ValueStringPointer(),
-	}
-
-	actions, diags := from.ColumnAction.Get(ctx)
-	if diags.HasError() {
-		return result, diags
-	}
-
-	for _, a := range actions {
-		result.ColumnAction = append(result.ColumnAction, fabcore.ColumnAction(a.ValueString()))
-	}
-
-	names, diags := from.ColumnNames.Get(ctx)
-	if diags.HasError() {
-		return result, diags
-	}
-
-	for _, n := range names {
-		result.ColumnNames = append(result.ColumnNames, n.ValueString())
-	}
-
-	return result, nil
-}
-
 type rowConstraintModel struct {
 	TablePath types.String `tfsdk:"table_path"`
 	Value     types.String `tfsdk:"value"`
@@ -458,13 +465,6 @@ type rowConstraintModel struct {
 func (to *rowConstraintModel) set(from fabcore.RowConstraint) {
 	to.TablePath = types.StringPointerValue(from.TablePath)
 	to.Value = types.StringPointerValue(from.Value)
-}
-
-func (from *rowConstraintModel) toSDK() fabcore.RowConstraint {
-	return fabcore.RowConstraint{
-		TablePath: from.TablePath.ValueStringPointer(),
-		Value:     from.Value.ValueStringPointer(),
-	}
 }
 
 type membersModel struct {
@@ -511,43 +511,6 @@ func (to *membersModel) set(ctx context.Context, from fabcore.Members) diag.Diag
 	return nil
 }
 
-func (from *membersModel) toSDK(ctx context.Context) (fabcore.Members, diag.Diagnostics) {
-	result := fabcore.Members{}
-
-	fimModels, diags := from.FabricItemMembers.Get(ctx)
-	if diags.HasError() {
-		return result, diags
-	}
-
-	if fimModels != nil {
-		result.FabricItemMembers = make([]fabcore.FabricItemMember, 0, len(fimModels))
-
-		for _, fimModel := range fimModels {
-			fim, d := fimModel.toSDK(ctx)
-			if d.HasError() {
-				return result, d
-			}
-
-			result.FabricItemMembers = append(result.FabricItemMembers, fim)
-		}
-	}
-
-	memModels, diags := from.MicrosoftEntraMembers.Get(ctx)
-	if diags.HasError() {
-		return result, diags
-	}
-
-	if memModels != nil {
-		result.MicrosoftEntraMembers = make([]fabcore.MicrosoftEntraMember, 0, len(memModels))
-
-		for _, memModel := range memModels {
-			result.MicrosoftEntraMembers = append(result.MicrosoftEntraMembers, memModel.toSDK())
-		}
-	}
-
-	return result, nil
-}
-
 type fabricItemMemberModel struct {
 	ItemAccess supertypes.ListValueOf[types.String] `tfsdk:"item_access"`
 	SourcePath types.String                         `tfsdk:"source_path"`
@@ -571,23 +534,6 @@ func (to *fabricItemMemberModel) set(ctx context.Context, from fabcore.FabricIte
 	return nil
 }
 
-func (from *fabricItemMemberModel) toSDK(ctx context.Context) (fabcore.FabricItemMember, diag.Diagnostics) {
-	result := fabcore.FabricItemMember{
-		SourcePath: from.SourcePath.ValueStringPointer(),
-	}
-
-	accesses, diags := from.ItemAccess.Get(ctx)
-	if diags.HasError() {
-		return result, diags
-	}
-
-	for _, a := range accesses {
-		result.ItemAccess = append(result.ItemAccess, fabcore.ItemAccess(a.ValueString()))
-	}
-
-	return result, nil
-}
-
 type microsoftEntraMemberModel struct {
 	ObjectID   customtypes.UUID `tfsdk:"object_id"`
 	TenantID   customtypes.UUID `tfsdk:"tenant_id"`
@@ -598,12 +544,4 @@ func (to *microsoftEntraMemberModel) set(from fabcore.MicrosoftEntraMember) {
 	to.ObjectID = customtypes.NewUUIDPointerValue(from.ObjectID)
 	to.TenantID = customtypes.NewUUIDPointerValue(from.TenantID)
 	to.ObjectType = types.StringPointerValue((*string)(from.ObjectType))
-}
-
-func (from *microsoftEntraMemberModel) toSDK() fabcore.MicrosoftEntraMember {
-	return fabcore.MicrosoftEntraMember{
-		ObjectID:   from.ObjectID.ValueStringPointer(),
-		TenantID:   from.TenantID.ValueStringPointer(),
-		ObjectType: (*fabcore.ObjectType)(from.ObjectType.ValueStringPointer()),
-	}
 }

@@ -246,7 +246,7 @@ func (r *resourceOneLakeDataAccessSecurity) ImportState(ctx context.Context, req
 	})
 
 	parts := strings.SplitN(req.ID, "/", 3) //nolint:mnd
-	if len(parts) != 3 {                     //nolint:mnd
+	if len(parts) != 3 {                    //nolint:mnd
 		resp.Diagnostics.AddError(
 			common.ErrorImportIdentifierHeader,
 			fmt.Sprintf(common.ErrorImportIdentifierDetails, "WorkspaceID/ItemID/RoleName"),

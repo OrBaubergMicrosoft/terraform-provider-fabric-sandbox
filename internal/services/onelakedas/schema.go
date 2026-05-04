@@ -13,11 +13,10 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema/stringplanmodifier"
 	"github.com/hashicorp/terraform-plugin-framework/schema/validator"
 	"github.com/hashicorp/terraform-plugin-framework/types"
+	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	fabcore "github.com/microsoft/fabric-sdk-go/fabric/core"
 	superschema "github.com/orange-cloudavenue/terraform-plugin-framework-superschema"
 	supertypes "github.com/orange-cloudavenue/terraform-plugin-framework-supertypes"
-
-	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 
 	"github.com/microsoft/terraform-provider-fabric/internal/framework/customtypes"
 	"github.com/microsoft/terraform-provider-fabric/internal/pkg/fabricitem"
@@ -207,8 +206,8 @@ func permissionScopeSchema() superschema.Attributes {
 		"attribute_value_included_in": superschema.SuperListAttribute{
 			Common: &schemaR.ListAttribute{
 				MarkdownDescription: "The list of values for the attribute to define the scope and level of access.",
-				CustomType: supertypes.ListTypeOf[types.String]{ListType: basetypes.ListType{ElemType: types.StringType}},
-				ElementType: types.StringType,
+				CustomType:          supertypes.ListTypeOf[types.String]{ListType: basetypes.ListType{ElemType: types.StringType}},
+				ElementType:         types.StringType,
 			},
 			Resource: &schemaR.ListAttribute{
 				Required:    true,
@@ -256,8 +255,8 @@ func columnConstraintSchema() superschema.Attributes {
 		"column_action": superschema.SuperListAttribute{
 			Common: &schemaR.ListAttribute{
 				MarkdownDescription: "The actions applied to the column names.",
-				CustomType: supertypes.ListTypeOf[types.String]{ListType: basetypes.ListType{ElemType: types.StringType}},
-				ElementType: types.StringType,
+				CustomType:          supertypes.ListTypeOf[types.String]{ListType: basetypes.ListType{ElemType: types.StringType}},
+				ElementType:         types.StringType,
 			},
 			Resource: &schemaR.ListAttribute{
 				Required:    true,
@@ -285,8 +284,8 @@ func columnConstraintSchema() superschema.Attributes {
 		"column_names": superschema.SuperListAttribute{
 			Common: &schemaR.ListAttribute{
 				MarkdownDescription: "An array of column names.",
-				CustomType: supertypes.ListTypeOf[types.String]{ListType: basetypes.ListType{ElemType: types.StringType}},
-				ElementType: types.StringType,
+				CustomType:          supertypes.ListTypeOf[types.String]{ListType: basetypes.ListType{ElemType: types.StringType}},
+				ElementType:         types.StringType,
 			},
 			Resource: &schemaR.ListAttribute{
 				Required:    true,
@@ -372,8 +371,8 @@ func fabricItemMemberSchema() superschema.Attributes {
 		"item_access": superschema.SuperListAttribute{
 			Common: &schemaR.ListAttribute{
 				MarkdownDescription: "The access permissions for the Fabric item member.",
-				CustomType: supertypes.ListTypeOf[types.String]{ListType: basetypes.ListType{ElemType: types.StringType}},
-				ElementType: types.StringType,
+				CustomType:          supertypes.ListTypeOf[types.String]{ListType: basetypes.ListType{ElemType: types.StringType}},
+				ElementType:         types.StringType,
 			},
 			Resource: &schemaR.ListAttribute{
 				Required:    true,

@@ -16,7 +16,7 @@ import (
 
 func newRandomDataAccessRoleBase() fabcore.DataAccessRoleBase {
 	return fabcore.DataAccessRoleBase{
-		Name: azto.Ptr("TestRole"),
+		Name: new("TestRole"),
 		Kind: azto.Ptr(fabcore.DataAccessRoleKindPolicy),
 		DecisionRules: []fabcore.DecisionRule{
 			{
@@ -32,8 +32,8 @@ func newRandomDataAccessRoleBase() fabcore.DataAccessRoleBase {
 		Members: &fabcore.Members{
 			MicrosoftEntraMembers: []fabcore.MicrosoftEntraMember{
 				{
-					ObjectID:   azto.Ptr(testhelp.RandomUUID()),
-					TenantID:   azto.Ptr(testhelp.RandomUUID()),
+					ObjectID:   new(testhelp.RandomUUID()),
+					TenantID:   new(testhelp.RandomUUID()),
 					ObjectType: azto.Ptr(fabcore.ObjectTypeUser),
 				},
 			},
@@ -50,8 +50,8 @@ func newRandomDataAccessRoleListItem(base fabcore.DataAccessRoleBase) fabcore.Da
 	}
 }
 
-func fakeCreateOrUpdateSingleDataAccessRole() func(ctx context.Context, workspaceID string, itemID string, createOrUpdateSingleDataAccessRoleRequest fabcore.DataAccessRoleBase, options *fabcore.OneLakeDataAccessSecurityClientCreateOrUpdateSingleDataAccessRoleOptions) (resp azfake.Responder[fabcore.OneLakeDataAccessSecurityClientCreateOrUpdateSingleDataAccessRoleResponse], errResp azfake.ErrorResponder) {
-	return func(_ context.Context, _ string, _ string, _ fabcore.DataAccessRoleBase, _ *fabcore.OneLakeDataAccessSecurityClientCreateOrUpdateSingleDataAccessRoleOptions) (resp azfake.Responder[fabcore.OneLakeDataAccessSecurityClientCreateOrUpdateSingleDataAccessRoleResponse], errResp azfake.ErrorResponder) {
+func fakeCreateOrUpdateSingleDataAccessRole() func(ctx context.Context, workspaceID, itemID string, createOrUpdateSingleDataAccessRoleRequest fabcore.DataAccessRoleBase, options *fabcore.OneLakeDataAccessSecurityClientCreateOrUpdateSingleDataAccessRoleOptions) (resp azfake.Responder[fabcore.OneLakeDataAccessSecurityClientCreateOrUpdateSingleDataAccessRoleResponse], errResp azfake.ErrorResponder) {
+	return func(_ context.Context, _, _ string, _ fabcore.DataAccessRoleBase, _ *fabcore.OneLakeDataAccessSecurityClientCreateOrUpdateSingleDataAccessRoleOptions) (resp azfake.Responder[fabcore.OneLakeDataAccessSecurityClientCreateOrUpdateSingleDataAccessRoleResponse], errResp azfake.ErrorResponder) {
 		resp = azfake.Responder[fabcore.OneLakeDataAccessSecurityClientCreateOrUpdateSingleDataAccessRoleResponse]{}
 		resp.SetResponse(http.StatusOK, fabcore.OneLakeDataAccessSecurityClientCreateOrUpdateSingleDataAccessRoleResponse{}, nil)
 
@@ -59,8 +59,10 @@ func fakeCreateOrUpdateSingleDataAccessRole() func(ctx context.Context, workspac
 	}
 }
 
-func fakeGetDataAccessRole(entity fabcore.DataAccessRoleBase) func(ctx context.Context, workspaceID string, itemID string, roleName string, options *fabcore.OneLakeDataAccessSecurityClientGetDataAccessRoleOptions) (resp azfake.Responder[fabcore.OneLakeDataAccessSecurityClientGetDataAccessRoleResponse], errResp azfake.ErrorResponder) {
-	return func(_ context.Context, _ string, _ string, _ string, _ *fabcore.OneLakeDataAccessSecurityClientGetDataAccessRoleOptions) (resp azfake.Responder[fabcore.OneLakeDataAccessSecurityClientGetDataAccessRoleResponse], errResp azfake.ErrorResponder) {
+func fakeGetDataAccessRole(
+	entity fabcore.DataAccessRoleBase,
+) func(ctx context.Context, workspaceID, itemID, roleName string, options *fabcore.OneLakeDataAccessSecurityClientGetDataAccessRoleOptions) (resp azfake.Responder[fabcore.OneLakeDataAccessSecurityClientGetDataAccessRoleResponse], errResp azfake.ErrorResponder) {
+	return func(_ context.Context, _, _, _ string, _ *fabcore.OneLakeDataAccessSecurityClientGetDataAccessRoleOptions) (resp azfake.Responder[fabcore.OneLakeDataAccessSecurityClientGetDataAccessRoleResponse], errResp azfake.ErrorResponder) {
 		resp = azfake.Responder[fabcore.OneLakeDataAccessSecurityClientGetDataAccessRoleResponse]{}
 		resp.SetResponse(http.StatusOK, fabcore.OneLakeDataAccessSecurityClientGetDataAccessRoleResponse{
 			DataAccessRoleBase: entity,
@@ -70,8 +72,8 @@ func fakeGetDataAccessRole(entity fabcore.DataAccessRoleBase) func(ctx context.C
 	}
 }
 
-func fakeDeleteDataAccessRole() func(ctx context.Context, workspaceID string, itemID string, roleName string, options *fabcore.OneLakeDataAccessSecurityClientDeleteDataAccessRoleOptions) (resp azfake.Responder[fabcore.OneLakeDataAccessSecurityClientDeleteDataAccessRoleResponse], errResp azfake.ErrorResponder) {
-	return func(_ context.Context, _ string, _ string, _ string, _ *fabcore.OneLakeDataAccessSecurityClientDeleteDataAccessRoleOptions) (resp azfake.Responder[fabcore.OneLakeDataAccessSecurityClientDeleteDataAccessRoleResponse], errResp azfake.ErrorResponder) {
+func fakeDeleteDataAccessRole() func(ctx context.Context, workspaceID, itemID, roleName string, options *fabcore.OneLakeDataAccessSecurityClientDeleteDataAccessRoleOptions) (resp azfake.Responder[fabcore.OneLakeDataAccessSecurityClientDeleteDataAccessRoleResponse], errResp azfake.ErrorResponder) {
+	return func(_ context.Context, _, _, _ string, _ *fabcore.OneLakeDataAccessSecurityClientDeleteDataAccessRoleOptions) (resp azfake.Responder[fabcore.OneLakeDataAccessSecurityClientDeleteDataAccessRoleResponse], errResp azfake.ErrorResponder) {
 		resp = azfake.Responder[fabcore.OneLakeDataAccessSecurityClientDeleteDataAccessRoleResponse]{}
 		resp.SetResponse(http.StatusOK, fabcore.OneLakeDataAccessSecurityClientDeleteDataAccessRoleResponse{}, nil)
 
@@ -79,8 +81,10 @@ func fakeDeleteDataAccessRole() func(ctx context.Context, workspaceID string, it
 	}
 }
 
-func fakeListDataAccessRoles(entities []fabcore.DataAccessRoleListItem) func(ctx context.Context, workspaceID string, itemID string, options *fabcore.OneLakeDataAccessSecurityClientListDataAccessRolesOptions) (resp azfake.Responder[fabcore.OneLakeDataAccessSecurityClientListDataAccessRolesResponse], errResp azfake.ErrorResponder) {
-	return func(_ context.Context, _ string, _ string, _ *fabcore.OneLakeDataAccessSecurityClientListDataAccessRolesOptions) (resp azfake.Responder[fabcore.OneLakeDataAccessSecurityClientListDataAccessRolesResponse], errResp azfake.ErrorResponder) {
+func fakeListDataAccessRoles(
+	entities []fabcore.DataAccessRoleListItem,
+) func(ctx context.Context, workspaceID, itemID string, options *fabcore.OneLakeDataAccessSecurityClientListDataAccessRolesOptions) (resp azfake.Responder[fabcore.OneLakeDataAccessSecurityClientListDataAccessRolesResponse], errResp azfake.ErrorResponder) {
+	return func(_ context.Context, _, _ string, _ *fabcore.OneLakeDataAccessSecurityClientListDataAccessRolesOptions) (resp azfake.Responder[fabcore.OneLakeDataAccessSecurityClientListDataAccessRolesResponse], errResp azfake.ErrorResponder) {
 		resp = azfake.Responder[fabcore.OneLakeDataAccessSecurityClientListDataAccessRolesResponse]{}
 		resp.SetResponse(http.StatusOK, fabcore.OneLakeDataAccessSecurityClientListDataAccessRolesResponse{
 			DataAccessRoles: fabcore.DataAccessRoles{
