@@ -62,7 +62,16 @@ Use **#skill:sdk-contract-navigator** to get the full SDK contract (client type,
 
 ### Step 2 — Create File Structure
 
-Create `internal/services/<package>/` following the file structure in `non-item-patterns.instructions.md`. Study the canonical reference for the most similar existing Non-Item resource (see "Canonical References" section below).
+Create `internal/services/<package>/` following the file structure in `non-item-patterns.instructions.md`. Choose the canonical reference using this decision guide:
+
+| Your resource characteristic                       | Follow                           | Why                             |
+| -------------------------------------------------- | -------------------------------- | ------------------------------- |
+| Simple workspace-scoped CRUD, no polymorphism      | `internal/services/workspace/`   | Simplest pattern                |
+| Polymorphic types / subtypes with classification   | `internal/services/gateway/`     | Type switches, shared configure |
+| Generic type params for resource/DS model variants | `internal/services/connection/`  | Most complex model pattern      |
+| Sub-resource under a parent (role assignments)     | `internal/services/workspacera/` | Composite ID, parent-scoped     |
+| Non-standard path params (3+)                      | `internal/services/shortcut/`    | Inline fakes, custom ID         |
+| Not workspace-scoped (tenant-level)                | `internal/services/domain/`      | No workspace_id in schema       |
 
 ### Step 3.1 — Design Models
 

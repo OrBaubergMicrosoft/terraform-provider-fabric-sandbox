@@ -72,11 +72,15 @@ type lakehouseSQLEndpointPropertiesModel struct {
 }
 ```
 
-## Step 3 — Generate the `set()` Method
+## Step 3 — Generate Model Methods
 
-Every model struct needs a `set()` method that maps SDK DTO → TF model.
+Generate both directions of mapping: **response `set()`** (SDK → TF) and **request builders** (TF → SDK).
 
-### Top-level `set()` (with nested objects)
+### 3a. Response `set()` — SDK → TF (both Fabric Items and Non-Items)
+
+Every model struct needs a `set()` method that maps SDK response DTO → TF model.
+
+**Top-level `set()` (with nested objects):**
 
 Signature includes `context.Context` and returns `diag.Diagnostics`:
 
@@ -100,7 +104,7 @@ func (to *<item>PropertiesModel) set(ctx context.Context, from fab<package>.<DTO
 }
 ```
 
-### Leaf `set()` (no nested objects)
+**Leaf `set()` (no nested objects):**
 
 Simpler signature without `context.Context` or `diag.Diagnostics`:
 
@@ -112,9 +116,50 @@ func (to *<nestedModel>) set(from fab<package>.<NestedDTO>) {
 }
 ```
 
-### Setter Patterns by Type
+**Setter patterns by type:** Use the "Setter Pattern" column in the "SDK Type → Model Type Mapping" table in `schema-model-patterns.instructions.md`.
 
-Use the **"Setter Pattern"** column in the "SDK Type → Model Type Mapping" table in `.github/instructions/schema-model-patterns.instructions.md`.
+### 3b. Request Builders — TF → SDK (Create/Update)
+
+Both Fabric Items and Non-Items need TF→SDK mapping for writable fields. The pattern differs by category:
+
+- **Fabric Items:** Inline in `creationPayloadSetter` closure (simple — typically 1-3 fields from configuration model). See `fabric-item-patterns.instructions.md` § "Closure Examples".
+- **Non-Items:** Dedicated request builder structs with `set()` + `toSDK()` methods (complex — full request DTOs)
+
+**Non-Item Request Builder Struct:**
+
+```go
+type requestCreate<Type> struct {
+    DisplayName *string
+    Description *string
+    // ... writable fields matching SDK Create request DTO
+}
+
+func (to *requestCreate<Type>) set(ctx context.Context, from *<type>ResourceModel) diag.Diagnostics {
+    to.DisplayName = from.DisplayName.ValueStringPointer()
+    to.Description = from.Description.ValueStringPointer()
+    // ... map each writable field
+    return nil
+}
+
+func (to *requestCreate<Type>) toSDK() fabcore.Create<Type>Request {
+    return fabcore.Create<Type>Request{
+        DisplayName: to.DisplayName,
+        Description: to.Description,
+    }
+}
+```
+
+**Inverse mapping rules:** Use the inverse of the "SDK Type → Model Type Mapping" table in `schema-model-patterns.instructions.md`. For each TF type, call its `Value*Pointer()` method (e.g., `types.String` → `.ValueStringPointer()`, `types.Bool` → `.ValueBoolPointer()`).
+
+**Non-obvious cases:**
+
+| TF Model Type                             | SDK Type      | Pattern                                                            |
+| ----------------------------------------- | ------------- | ------------------------------------------------------------------ |
+| `types.Int64`                             | `*int32`      | `ptr.To(int32(from.Field.ValueInt64()))` — type narrowing required |
+| `supertypes.SingleNestedObjectValueOf[M]` | `*NestedDTO`  | `.Get(ctx)` → construct nested DTO from sub-model                  |
+| `supertypes.ListNestedObjectValueOf[M]`   | `[]NestedDTO` | `.Get(ctx)` → iterate slice, build each DTO                        |
+
+Reference: `internal/services/connection/models_resource_connection.go`
 
 ## Step 4 — Generate Schema Attributes
 
@@ -196,3 +241,4 @@ Additional rules:
 - Resource schema patterns: `internal/services/lakehouse/schema_resource_lakehouse.go`
 - Data source schema patterns: `internal/services/lakehouse/schema_data_lakehouse.go`
 - Non-item schema (superschema): `internal/services/connection/schema.go`
+- Request builder patterns: `internal/services/connection/models_resource_connection.go`
