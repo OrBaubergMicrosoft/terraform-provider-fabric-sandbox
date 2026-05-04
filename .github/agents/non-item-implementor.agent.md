@@ -50,7 +50,7 @@ Step 0: Determine Scope
 
 ---
 
-## New Resource Workflow — Steps 1 through 9
+## New Resource Workflow — Steps 1 through 10
 
 > Detailed patterns are in `non-item-patterns.instructions.md` (auto-loaded when editing `internal/services/**/*.go`).
 
@@ -101,11 +101,23 @@ Implement direct CRUD methods (no closures) on a resource struct in `resource_<t
 
 Implement singular and plural data sources in `data_<type>.go` / `data_<types>.go`, each with its own `Configure` and `Read`. See `non-item-patterns.instructions.md` for patterns.
 
-### Step 5 — Complete Base Constants
+### Step 5 — Create Fakes and Tests
+
+Create test files following `testing-patterns.instructions.md` and `fake-handler-patterns.instructions.md`:
+
+1. **Fakes** — Use the Fake Pattern Decision Tree to choose centralized (`internal/testhelp/fakes/`) or inline (`fake_test.go`). Implement operations struct, configure function, and `NewRandom<Type>()` generator with all response fields populated.
+2. **`base_test.go`** — Shared variables (`testResourceItemFQN`, `testDataSourceItemFQN`) and test server factory.
+3. **`resource_<type>_test.go`** — `TestUnit_<TypeName>Resource_CRUD`, `TestUnit_<TypeName>Resource_Attributes`, `TestUnit_<TypeName>Resource_ImportState`.
+4. **`data_<type>_test.go`** — `TestUnit_<TypeName>DataSource` (by-id, by-name, not-found).
+5. **`data_<types>_test.go`** — `TestUnit_<TypeName>sDataSource` (plural list).
+
+Use `resource.ParallelTest`, black-box testing (`package <name>_test`), and `at.CompileConfig` for HCL generation.
+
+### Step 6 — Complete Base Constants
 
 In `base.go`, define `ItemTypeInfo` with all fields including `IsPreview` and `IsSPNSupported` (values extracted from the issue in Step 0). See `non-item-patterns.instructions.md` for the exact structure.
 
-### Step 6 — Register in Provider
+### Step 7 — Register in Provider
 
 Add imports and constructor calls to `internal/provider/provider.go`:
 
@@ -113,7 +125,7 @@ Add imports and constructor calls to `internal/provider/provider.go`:
 2. **Resources()** — add the resource constructor
 3. **DataSources()** — add both singular and plural data source constructors
 
-### Step 7 — Generate Examples
+### Step 8 — Generate Examples
 
 Create example HCL files in `examples/`:
 
@@ -121,7 +133,7 @@ Create example HCL files in `examples/`:
 - `examples/data-sources/fabric_<type>/main.tf` — singular data source example
 - `examples/data-sources/fabric_<types>/main.tf` — plural data source example
 
-### Step 8 — Lint, Docs, and Unit Tests
+### Step 9 — Lint, Docs, and Unit Tests
 
 **Prerequisites — ensure tooling is available:**
 
@@ -134,7 +146,7 @@ Create example HCL files in `examples/`:
 2. **`task lint`** — run all linters; fix any reported issues
 3. **`task testunit -- <Name> ./internal/services/<package>/`** — run unit tests; fix any failures
 
-### Step 9 — Quality Verification
+### Step 10 — Quality Verification
 
 After all lint, docs, and tests pass, verify:
 

@@ -123,31 +123,24 @@ func (to *<nestedModel>) set(from fab<package>.<NestedDTO>) {
 Both Fabric Items and Non-Items need TF→SDK mapping for writable fields. The pattern differs by category:
 
 - **Fabric Items:** Inline in `creationPayloadSetter` closure (simple — typically 1-3 fields from configuration model). See `fabric-item-patterns.instructions.md` § "Closure Examples".
-- **Non-Items:** Dedicated request builder structs with `set()` + `toSDK()` methods (complex — full request DTOs)
+- **Non-Items:** Dedicated request builder structs with `set()` method that builds the SDK request directly (complex — full request DTOs)
 
-**Non-Item Request Builder Struct:**
+**Non-Item Request Builder Struct** — embeds the SDK request type, `set()` populates it:
 
 ```go
 type requestCreate<Type> struct {
-    DisplayName *string
-    Description *string
-    // ... writable fields matching SDK Create request DTO
+    fabcore.Create<Type>Request // embedded SDK request type
 }
 
-func (to *requestCreate<Type>) set(ctx context.Context, from *<type>ResourceModel) diag.Diagnostics {
+func (to *requestCreate<Type>) set(ctx context.Context, from <type>ResourceModel) diag.Diagnostics {
     to.DisplayName = from.DisplayName.ValueStringPointer()
     to.Description = from.Description.ValueStringPointer()
-    // ... map each writable field
+    // ... map each writable field into the embedded struct
     return nil
 }
-
-func (to *requestCreate<Type>) toSDK() fabcore.Create<Type>Request {
-    return fabcore.Create<Type>Request{
-        DisplayName: to.DisplayName,
-        Description: to.Description,
-    }
-}
 ```
+
+Usage: `r.client.Create<Type>(ctx, reqCreate.Create<Type>Request, nil)`
 
 **Inverse mapping rules:** Use the inverse of the "SDK Type → Model Type Mapping" table in `schema-model-patterns.instructions.md`. For each TF type, call its `Value*Pointer()` method (e.g., `types.String` → `.ValueStringPointer()`, `types.Bool` → `.ValueBoolPointer()`).
 

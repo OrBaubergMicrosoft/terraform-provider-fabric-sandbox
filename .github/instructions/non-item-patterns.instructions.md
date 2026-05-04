@@ -52,12 +52,12 @@ func (r *resource<Type>) Create(ctx context.Context, req resource.CreateRequest,
     ctx, cancel := context.WithTimeout(ctx, timeout)
     defer cancel()
 
-    // Build request
+    // Build request (request builder embeds SDK request type)
     var reqCreate requestCreate<Type>
-    if resp.Diagnostics.Append(reqCreate.set(ctx, &plan)...); resp.Diagnostics.HasError() { return }
+    if resp.Diagnostics.Append(reqCreate.set(ctx, plan)...); resp.Diagnostics.HasError() { return }
 
-    // Call SDK
-    respCreate, err := r.client.Create<Type>(ctx, reqCreate.toSDK(), nil)
+    // Call SDK — pass the embedded SDK request field
+    respCreate, err := r.client.Create<Type>(ctx, reqCreate.Create<Type>Request, nil)
     if resp.Diagnostics.Append(utils.GetDiagsFromError(ctx, err, utils.OperationCreate, nil)...); resp.Diagnostics.HasError() { return }
 
     // Map response → model
