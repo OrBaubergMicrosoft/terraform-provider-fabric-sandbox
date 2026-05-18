@@ -1545,7 +1545,17 @@ $wellKnown['Eventstream']['sourceConnection'] = @{
   fullyQualifiedNamespace = $eventstreamConnection.fullyQualifiedNamespace
 }
 
+# Set Eventstream destination connection
+$eventstreamDestination = $eventstreamTopology.destinations | Where-Object { $_.type -eq 'CustomEndpoint' } | Select-Object -First 1
+$eventstreamDestinationId = $eventstreamDestination.id
 
+$eventstreamDestConnection = (Invoke-FabricRest -Method 'GET' -Endpoint "workspaces/$($wellKnown['WorkspaceDS'].id)/eventstreams/$($eventstream.id)/destinations/$($eventstreamDestinationId)/connection").Response
+$wellKnown['Eventstream']['destinationConnection'] = @{
+  destinationId           = $eventstreamDestinationId
+  eventHubName            = $eventstreamDestConnection.eventHubName
+  fullyQualifiedNamespace = $eventstreamDestConnection.fullyQualifiedNamespace
+  consumerGroupName       = $eventstreamDestConnection.consumerGroupName
+}
 
 # Create Parent Domain if not exists
 $displayNameTemp = "${displayName}_$($itemNaming['DomainParent'])"

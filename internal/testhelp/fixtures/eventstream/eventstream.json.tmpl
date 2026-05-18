@@ -11,7 +11,7 @@
       "name": "Lakehouse",
       "type": "Lakehouse",
       "properties": {
-      "workspaceId": "{{ .LakehouseWorkspaceID }}",
+        "workspaceId": "{{ .LakehouseWorkspaceID }}",
         "itemId": "{{ .LakehouseID }}",
         "schema": "",
         "deltaTable": "streamTable",
@@ -22,6 +22,17 @@
           }
         }
       },
+      "inputNodes": [
+        {
+          "name": "stream"
+        }
+      ],
+      "inputSchemas": []
+    },
+    {
+      "name": "CustomEndpointDestination",
+      "type": "CustomEndpoint",
+      "properties": {},
       "inputNodes": [
         {
           "name": "stream"
